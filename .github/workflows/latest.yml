@@ -63,8 +63,6 @@ jobs:
         shell: pwsh
         run: |
           $answers = @(
-            "${env:PYTHON_BIN_PATH}",  # Python binary path
-            "${env:PYTHON_LIB_PATH}",  # Python library path
             "N",                       # ROCm support? No
             "N",                       # CUDA support? No
             "Y",                       # Use Clang? Yes
