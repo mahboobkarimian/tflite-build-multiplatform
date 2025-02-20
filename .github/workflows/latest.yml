@@ -70,12 +70,12 @@ jobs:
 
       # Step 9: Build TensorFlow lite C++
       - name: Build TensorFlow
-        run: bazel build //tensorflow/lite:tensorflowlite.dll -c opt
+        run: bazel build //tensorflow/lite:tensorflowlite.dll -c opt --conlyopt=/std:c11
         shell: cmd
         
       # Step 10: Build TensorFlow C
       - name: Build TensorFlow
-        run: bazel build //tensorflow/lite/c:tensorflowlite_c.dll -c opt
+        run: bazel build //tensorflow/lite/c:tensorflowlite_c.dll -c opt --conlyopt=/std:c11
         shell: cmd
 
       # Step 11: Zip
