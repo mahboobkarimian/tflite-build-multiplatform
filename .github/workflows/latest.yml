@@ -60,48 +60,25 @@ jobs:
 
       - name: Configure TensorFlow
         shell: pwsh
+        env:
+          TF_NEED_CLANG: 1  # Force TensorFlow to use Clang
         run: |
-          # Define a function to generate answers based on prompt keywords
-          function Get-Answer($prompt) {
-            if ($prompt -match "Python.*path") {
-              if ($prompt -match "binary") { return "${env:PYTHON_BIN_PATH}" }
-              if ($prompt -match "library") { return "${env:PYTHON_LIB_PATH}" }
-            }
-            if ($prompt -match "ROCm") { return "N" }
-            if ($prompt -match "CUDA") { return "N" }
-            if ($prompt -match "Clang") { return "Y" }
-            if ($prompt -match "optimization flags") { return "" }
-            if ($prompt -match "Eigen.*inline") { return "N" }
-            return "N"  # Default answer for unrecognized prompts
-          }
+          # Generate an array of empty strings (simulating Enter presses)
+          $promptCount = 10  # Adjust this number based on expected prompts
+          $answers = @("") * $promptCount
       
-          # List of expected prompts (based on common TensorFlow configure.py questions)
-          $prompts = @(
-            "Please specify the location of python.",
-            "Please input the desired Python library path to use.",
-            "Do you wish to build TensorFlow with ROCm support?",
-            "Do you want to use Clang to build TensorFlow?",
-            "Please specify the path to clang executable.,
-            "Please specify optimization flags to use during compilation when bazel option "--config=opt" is specified",
-            "Would you like to override eigen strong inline for some C++ compilation to reduce the compilation time?",
-            "Would you like to interactively configure ./WORKSPACE for Android builds?"
-          )
-      
-          # Generate answers based on prompts
-          $answers = $prompts | ForEach-Object { Get-Answer $_ }
-      
-          # Join answers with newlines and pipe to configure.py
+          # Join with newlines and pipe to configure.py
           $answers -join "`n" | python configure.py
 
 
       # Step 9: Build TensorFlow lite C++
       - name: Build TensorFlow
-        run: bazel build //tensorflow/lite:tensorflowlite.dll -c opt
+        run: bazel build //tensorflow/lite:tensorflowlite.dll -c opt --config=win_clang
         shell: cmd
         
       # Step 10: Build TensorFlow C
       - name: Build TensorFlow
-        run: bazel build //tensorflow/lite/c:tensorflowlite_c.dll -c opt
+        run: bazel build //tensorflow/lite/c:tensorflowlite_c.dll -c opt --config=win_clang
         shell: cmd
 
       # Step 11: Zip
