@@ -8,7 +8,7 @@ jobs:
     steps:
       # Step 1: Checkout the TensorFlow repository
       - name: Checkout TensorFlow
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4  # Updated to v4 for consistency
         with:
           repository: tensorflow/tensorflow
           ref: v2.10.0  # Building TensorFlow version 2.10.0; adjust as needed
@@ -20,13 +20,13 @@ jobs:
 
       # Step 3: Set up Python 3.9
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5  # Updated to v5 for latest features
         with:
           python-version: '3.9'  # TensorFlow requires Python 3.9+
 
       # Step 4: Set up Bazelisk to manage Bazel versions
       - name: Set up Bazelisk
-        uses: bazelbuild/setup-bazelisk@v1  # Uses version specified in .bazelversion
+        uses: bazelbuild/setup-bazelisk@v2  # Updated to v2
 
       # Step 5: Install Python dependencies
       - name: Install Python Dependencies
@@ -68,7 +68,8 @@ jobs:
 
       # Step 10: Upload the wheel file as an artifact
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4  # Updated to v4
         with:
           name: tensorflow-wheel
           path: C:\tmp\tensorflow_pkg\tensorflow-*.whl
+          retention-days: 7  # Optional: Specify how long to keep the artifact
