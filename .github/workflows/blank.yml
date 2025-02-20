@@ -81,8 +81,7 @@ jobs:
 
       # Step 11: Zip
       - name: Zip and Upload Artifact
-        run: |
-          zip -r tflite_dll_c_cpp.zip bazel-bin/
+        run: Compress-Archive -Path bazel-bin\* -DestinationPath tflite_dll_c_cpp.zip
 
       # Step 12: Upload
       - name: Upload Artifact
