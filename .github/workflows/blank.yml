@@ -71,18 +71,13 @@ jobs:
 
       # Step 9: Build TensorFlow
       - name: Build TensorFlow
-        run: bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package
+        run: bazel build //tensorflow/lite:tensorflowlite.dll -c opt
         shell: cmd
 
-      # Step 10: Package TensorFlow
-      - name: Package TensorFlow
-        run: bazel-bin\tensorflow\tools\pip_package\build_pip_package C:\tmp\tensorflow_pkg
-        shell: cmd
-
-      # Step 11: Upload the wheel file
+      # Step 10: Upload the wheel file
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: tensorflow-wheel
-          path: C:\tmp\tensorflow_pkg\tensorflow-*.whl
+          path: C:\tensorflow\bazel-bin/tensorflow/lite/tensorflowlite.dll
           retention-days: 7
