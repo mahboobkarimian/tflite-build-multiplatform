@@ -69,15 +69,24 @@ jobs:
           )
           $answers -join "`n" | python configure.py
 
-      # Step 9: Build TensorFlow
+      # Step 9: Build TensorFlow lite C++
       - name: Build TensorFlow
         run: bazel build //tensorflow/lite:tensorflowlite.dll -c opt
         shell: cmd
+        
+      # Step 10: Build TensorFlow C
+      - name: Build TensorFlow
+        run: bazel build //tensorflow/lite/c:tensorflowlite_c.dll -c opt
+        shell: cmd
 
-      # Step 10: Upload the wheel file
+      # Step 11: Zip
+      - name: Zip and Upload Artifact
+        run: |
+          zip -r tflite_dll_c_cpp.zip bazel-bin/
+
+      # Step 12: Upload
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tensorflow-wheel
-          path: C:\tensorflow\bazel-bin/tensorflow/lite/tensorflowlite.dll
-          retention-days: 7
+          name: tflite lib c and cpp
+          path: tflite_dll_c_cpp.zip
