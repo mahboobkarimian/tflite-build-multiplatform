@@ -19,9 +19,9 @@ jobs:
         shell: cmd
 
       # Install Clang using Chocolatey
-      - name: Install Clang
-        run: choco install llvm --version=17.0.6 -y
-        shell: cmd
+      #- name: Install Clang
+      #  run: choco install llvm --version=17.0.6 -y
+      #  shell: cmd
 
       # Set up MSYS2 (optional, for additional tools like patch)
       - name: Set up MSYS2
