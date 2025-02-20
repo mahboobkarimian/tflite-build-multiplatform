@@ -8,31 +8,43 @@ jobs:
     steps:
       # Step 1: Checkout the TensorFlow repository
       - name: Checkout TensorFlow
-        uses: actions/checkout@v4  # Updated to v4 for consistency
+        uses: actions/checkout@v4
         with:
           repository: tensorflow/tensorflow
-          ref: v2.10.0  # Building TensorFlow version 2.10.0; adjust as needed
+          ref: v2.18.0  # Adjust version as needed
 
-      # Step 2: Verify Chocolatey is available (pre-installed on windows-latest)
+      # Step 2: Verify Chocolatey is available
       - name: Verify Chocolatey Installation
         run: choco --version
         shell: cmd
 
-      # Step 3: Set up Python 3.9
-      - name: Set up Python
-        uses: actions/setup-python@v5  # Updated to v5 for latest features
+      # Step 3: Set up MSYS2
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
         with:
-          python-version: '3.9'  # TensorFlow requires Python 3.9+
+          msystem: MINGW64  # Use 64-bit MinGW environment
+          update: true      # Update MSYS2
+          install: >        # Install necessary tools
+            git
+            patch
+            unzip
+            mingw-w64-x86_64-gcc
 
-      # Step 4: Set up Bazelisk to manage Bazel versions
+      # Step 4: Set up Python 3.9
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      # Step 5: Set up Bazelisk
       - name: Set up Bazelisk
-        uses: bazelbuild/setup-bazelisk@v2  # Updated to v2
+        uses: bazelbuild/setup-bazelisk@v2
 
-      # Step 5: Install Python dependencies
+      # Step 6: Install Python dependencies
       - name: Install Python Dependencies
         run: pip install -U six numpy wheel packaging
 
-      # Step 6: Set Python environment variables dynamically
+      # Step 7: Set Python environment variables
       - name: Set Python Paths
         shell: pwsh
         run: |
@@ -40,8 +52,9 @@ jobs:
           $sitePackages = python -c "import site; print(site.getsitepackages()[0])"
           echo "PYTHON_BIN_PATH=$pythonExe" >> $env:GITHUB_ENV
           echo "PYTHON_LIB_PATH=$sitePackages" >> $env:GITHUB_ENV
+          echo "PATH=C:\msys64\mingw64\bin;$env:PATH" >> $env:GITHUB_ENV  # Add MSYS2 to PATH
 
-      # Step 7: Configure TensorFlow by answering configure.py questions
+      # Step 8: Configure TensorFlow
       - name: Configure TensorFlow
         shell: pwsh
         run: |
@@ -56,20 +69,20 @@ jobs:
           )
           $answers -join "`n" | python configure.py
 
-      # Step 8: Build TensorFlow
+      # Step 9: Build TensorFlow
       - name: Build TensorFlow
         run: bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package
         shell: cmd
 
-      # Step 9: Package TensorFlow into a wheel file
+      # Step 10: Package TensorFlow
       - name: Package TensorFlow
         run: bazel-bin\tensorflow\tools\pip_package\build_pip_package C:\tmp\tensorflow_pkg
         shell: cmd
 
-      # Step 10: Upload the wheel file as an artifact
+      # Step 11: Upload the wheel file
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4  # Updated to v4
+        uses: actions/upload-artifact@v4
         with:
           name: tensorflow-wheel
           path: C:\tmp\tensorflow_pkg\tensorflow-*.whl
-          retention-days: 7  # Optional: Specify how long to keep the artifact
+          retention-days: 7
