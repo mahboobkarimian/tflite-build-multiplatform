@@ -1,4 +1,4 @@
-name: Build TensorFlow on Windows
+name: Build TensorFlow on Windows with Clang
 
 on: [push, pull_request]
 
@@ -6,67 +6,73 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      # Step 1: Checkout the TensorFlow repository
+      # Checkout the TensorFlow repository
       - name: Checkout TensorFlow
         uses: actions/checkout@v4
         with:
           repository: tensorflow/tensorflow
+          # ref: v2.10.0  # Optional: specify a version if needed
 
-      # Step 2: Verify Chocolatey is available
+      # Verify Chocolatey is available
       - name: Verify Chocolatey Installation
         run: choco --version
         shell: cmd
 
-      # Step 3: Set up MSYS2
+      # Install Clang using Chocolatey
+      - name: Install Clang
+        run: choco install llvm --version=17.0.6 -y
+        shell: cmd
+
+      # Set up MSYS2 (optional, for additional tools like patch)
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64  # Use 64-bit MinGW environment
-          update: true      # Update MSYS2
-          install: >        # Install necessary tools
-            git
-            patch
-            unzip
-            mingw-w64-x86_64-gcc
+          msystem: MINGW64
+          update: true
+          install: git patch unzip mingw-w64-x86_64-gcc
 
-      # Step 4: Set up Python 3.9
+      # Set up Python 3.9
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      # Step 5: Set up Bazelisk
+      # Set up Bazelisk
       - name: Set up Bazelisk
         uses: bazelbuild/setup-bazelisk@v2
 
-      # Step 6: Install Python dependencies
+      # Install Python dependencies
       - name: Install Python Dependencies
         run: pip install -U six numpy wheel packaging
 
-      # Step 7: Set Python environment variables
-      - name: Set Python Paths
+      # Set environment variables for Python and Clang
+      - name: Set Environment Variables
         shell: pwsh
         run: |
           $pythonExe = (Get-Command python).Source
           $sitePackages = python -c "import site; print(site.getsitepackages()[0])"
           echo "PYTHON_BIN_PATH=$pythonExe" >> $env:GITHUB_ENV
           echo "PYTHON_LIB_PATH=$sitePackages" >> $env:GITHUB_ENV
-          echo "PATH=C:\msys64\mingw64\bin;$env:PATH" >> $env:GITHUB_ENV  # Add MSYS2 to PATH
+          # Add Clang to PATH
+          echo "PATH=C:\Program Files\LLVM\bin;$env:PATH" >> $env:GITHUB_ENV
+          # Add MSYS2 to PATH (if needed)
+          echo "PATH=C:\msys64\mingw64\bin;$env:PATH" >> $env:GITHUB_ENV
 
-      # Step 8: Configure TensorFlow
+      # Configure TensorFlow to use Clang
       - name: Configure TensorFlow
         shell: pwsh
         run: |
           $answers = @(
-            "${env:PYTHON_BIN_PATH}",  # Q1: Location of Python
-            "${env:PYTHON_LIB_PATH}",  # Q2: Python library path
-            "N",                       # Q3: ROCm support? No
-            "N",                       # Q4: CUDA support? No
-            "N",                       # Q5: Use Clang? No (use MSVC)
-            "",                        # Q6: Optimization flags (default)
-            "N"                        # Q7: Override eigen strong inline? No
+            "${env:PYTHON_BIN_PATH}",  # Python binary path
+            "${env:PYTHON_LIB_PATH}",  # Python library path
+            "N",                       # ROCm support? No
+            "N",                       # CUDA support? No
+            "Y",                       # Use Clang? Yes
+            "",                        # Optimization flags (default)
+            "N"                        # Override eigen strong inline? No
           )
           $answers -join "`n" | python configure.py
+
 
       # Step 9: Build TensorFlow lite C++
       - name: Build TensorFlow
