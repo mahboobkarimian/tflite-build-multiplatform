@@ -1,0 +1,74 @@
+name: Build TensorFlow on Windows
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      # Step 1: Checkout the TensorFlow repository
+      - name: Checkout TensorFlow
+        uses: actions/checkout@v2
+        with:
+          repository: tensorflow/tensorflow
+          ref: v2.10.0  # Building TensorFlow version 2.10.0; adjust as needed
+
+      # Step 2: Verify Chocolatey is available (pre-installed on windows-latest)
+      - name: Verify Chocolatey Installation
+        run: choco --version
+        shell: cmd
+
+      # Step 3: Set up Python 3.9
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'  # TensorFlow requires Python 3.9+
+
+      # Step 4: Set up Bazelisk to manage Bazel versions
+      - name: Set up Bazelisk
+        uses: bazelbuild/setup-bazelisk@v1  # Uses version specified in .bazelversion
+
+      # Step 5: Install Python dependencies
+      - name: Install Python Dependencies
+        run: pip install -U six numpy wheel packaging
+
+      # Step 6: Set Python environment variables dynamically
+      - name: Set Python Paths
+        shell: pwsh
+        run: |
+          $pythonExe = (Get-Command python).Source
+          $sitePackages = python -c "import site; print(site.getsitepackages()[0])"
+          echo "PYTHON_BIN_PATH=$pythonExe" >> $env:GITHUB_ENV
+          echo "PYTHON_LIB_PATH=$sitePackages" >> $env:GITHUB_ENV
+
+      # Step 7: Configure TensorFlow by answering configure.py questions
+      - name: Configure TensorFlow
+        shell: pwsh
+        run: |
+          $answers = @(
+            "${env:PYTHON_BIN_PATH}",  # Q1: Location of Python
+            "${env:PYTHON_LIB_PATH}",  # Q2: Python library path
+            "N",                       # Q3: ROCm support? No
+            "N",                       # Q4: CUDA support? No
+            "N",                       # Q5: Use Clang? No (use MSVC)
+            "",                        # Q6: Optimization flags (default)
+            "N"                        # Q7: Override eigen strong inline? No
+          )
+          $answers -join "`n" | python configure.py
+
+      # Step 8: Build TensorFlow
+      - name: Build TensorFlow
+        run: bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package
+        shell: cmd
+
+      # Step 9: Package TensorFlow into a wheel file
+      - name: Package TensorFlow
+        run: bazel-bin\tensorflow\tools\pip_package\build_pip_package C:\tmp\tensorflow_pkg
+        shell: cmd
+
+      # Step 10: Upload the wheel file as an artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: tensorflow-wheel
+          path: C:\tmp\tensorflow_pkg\tensorflow-*.whl
