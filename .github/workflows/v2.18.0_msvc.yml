@@ -1,6 +1,11 @@
 name: Build TensorFlowlite v2.18.0 on Windows debug version
 on:
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g., v2.18.0-debug)'
+        required: true
+        default: 'v2.18.0-debug'
 
 permissions:
   contents: write
