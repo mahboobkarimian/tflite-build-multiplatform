@@ -3,6 +3,9 @@ name: Build TensorFlow on Windows with Clang
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
