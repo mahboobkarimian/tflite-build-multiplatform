@@ -108,8 +108,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass it via env
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release Latest
+          tag_name: ${{ github.event.inputs.tag_name }}
+          release_name: Release ${{ github.event.inputs.tag_name }}
           draft: false
           prerelease: false
 
