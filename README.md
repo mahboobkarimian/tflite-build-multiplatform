@@ -1,7 +1,8 @@
 ### How to use
-0. Create a `CMakeLists.txt` for your project and use `tensorflowlite.dll.if.lib` to link it to your code. You also need `tensorflowlite.dll` for runtime.
+0. Download compiled tflite from releases.
+1. Create a `CMakeLists.txt` for your project and link `tensorflowlite.dll.if.lib` to it. You also need `tensorflowlite.dll` for runtime.
 
-1. Install tools
+2. Install tools
 ```
 choco install ninja -y
 choco install cmake -y
