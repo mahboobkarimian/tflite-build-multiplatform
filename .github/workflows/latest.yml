@@ -98,10 +98,11 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: Latest
+          tag_name: ${{ github.ref }}
           release_name: Release Latest
           draft: false
           prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -110,3 +111,4 @@ jobs:
           asset_path: ./tflite_dll_c_cpp.zip
           asset_name: tflite_dll_c_cpp.zip
           asset_content_type: application/zip
+          token: ${{ secrets.GITHUB_TOKEN }}
