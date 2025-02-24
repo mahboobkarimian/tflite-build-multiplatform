@@ -1,6 +1,7 @@
 name: Build TensorFlow on Windows with Clang
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -91,3 +92,21 @@ jobs:
         with:
           name: tflite lib c and cpp
           path: tflite_dll_c_cpp.zip
+
+      # Step 12: Create Release and Upload Asset
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: Latest
+          release_name: Release Latest
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./tflite_dll_c_cpp.zip
+          asset_name: tflite_dll_c_cpp.zip
+          asset_content_type: application/zip

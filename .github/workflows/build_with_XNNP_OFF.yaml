@@ -1,6 +1,7 @@
 name: Build TensorFlow 2.18 with DTFLITE_ENABLE_XNNPACK=OFF 
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
 
 jobs:
   build:
