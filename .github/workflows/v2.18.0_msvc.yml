@@ -83,22 +83,30 @@ jobs:
       - name: Zip and Upload Artifact
         run: Compress-Archive -Path bazel-bin\* -DestinationPath tflite_dll_c_cpp.zip
 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tflite_dll_c_cpp.zip
+          path: tflite_dll_c_cpp.zip
+
       # Step 12: Create Release and Upload Asset
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass it via env
         with:
           tag_name: ${{ github.ref }}
           release_name: Release v2.18.0 debug
           draft: false
           prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass it via env
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./tflite_dll_c_cpp.zip
           asset_name: tflite_dll_c_cpp.zip
           asset_content_type: application/zip
-          token: ${{ secrets.GITHUB_TOKEN }}
