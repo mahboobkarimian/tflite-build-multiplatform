@@ -20,10 +20,14 @@ jobs:
     
       - name: Get the checked-out tag
         id: get_tag
+        shell: powershell
         run: |
-          # Capture the tag from the checked-out ref
-          TAG=$(git describe --tags --exact-match 2>/dev/null || echo "unknown")
-          echo "TAG=$TAG" >> $GITHUB_ENV
+          try {
+            $TAG = git describe --tags --exact-match
+            Write-Output "TAG=$TAG" | Out-File -Append -FilePath $env:GITHUB_ENV
+          } catch {
+            Write-Output "TAG=unknown" | Out-File -Append -FilePath $env:GITHUB_ENV
+          }
 
       # Verify Chocolatey is available
       - name: Verify Chocolatey Installation
