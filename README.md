@@ -1,5 +1,5 @@
 ### How to use
-0. Download compiled tflite from releases.
+0. Download compiled tflite from releases. Get tensorflow source and **checkout to the version assigned to my release**.
 1. Create a `CMakeLists.txt` for your project and link `tensorflowlite.dll.if.lib` to it. You also need `tensorflowlite.dll` for runtime.
 
 2. Install tools
