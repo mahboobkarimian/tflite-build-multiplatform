@@ -1,12 +1,7 @@
-name: Build TensorFlow on Windows with Clang
+name: Build latest TensorFlowLite on Windows with Clang
 
 on:
   workflow_dispatch:
-    inputs:
-      tag_name:
-        description: 'Tag name for the release (e.g., v_latest)'
-        required: true
-        default: 'v_latest_release'
 
 permissions:
   contents: write
@@ -18,9 +13,21 @@ jobs:
       # Checkout the TensorFlow repository
       - name: Checkout TensorFlow
         uses: actions/checkout@v4
+        id: checkout_tensorflow
         with:
           repository: tensorflow/tensorflow
-          # ref: v2.10.0  # Optional: specify a version if needed
+          #ref: v2.18.0
+    
+      - name: Get the checked-out tag
+        id: get_tag
+        shell: powershell
+        run: |
+          try {
+            $TAG = git describe --tags --exact-match
+            Write-Output "TAG=$TAG" | Out-File -Append -FilePath $env:GITHUB_ENV
+          } catch {
+            Write-Output "TAG=unknown" | Out-File -Append -FilePath $env:GITHUB_ENV
+          }
 
       # Verify Chocolatey is available
       - name: Verify Chocolatey Installation
@@ -108,8 +115,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass it via env
         with:
-          tag_name: ${{ github.event.inputs.tag_name }}
-          release_name: Release ${{ github.event.inputs.tag_name }}
+          tag_name: ${{ env.TAG }}
+          release_name: "Release ${{ env.TAG }}"
           draft: false
           prerelease: false
 

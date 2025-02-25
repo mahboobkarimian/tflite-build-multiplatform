@@ -115,7 +115,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass it via env
         with:
-          tag_name: ${{ github.event.inputs.tag_name }}
+          tag_name: ${{ env.TAG }}
           release_name: "Release ${{ env.TAG }}"
           draft: false
           prerelease: false
