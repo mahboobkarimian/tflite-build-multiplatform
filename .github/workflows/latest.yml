@@ -82,12 +82,12 @@ jobs:
 
       # Step 9: Build TensorFlow lite C++
       - name: Build TensorFlow
-        run: bazel build //tensorflow/lite:tensorflowlite.dll -c opt --config=win_clang
+        run: bazel build //tensorflow/lite:tensorflowlite.dll -c opt --compiler=clang-cl
         shell: cmd
         
       # Step 10: Build TensorFlow C
       - name: Build TensorFlow
-        run: bazel build //tensorflow/lite/c:tensorflowlite_c.dll -c opt --config=win_clang
+        run: bazel build //tensorflow/lite/c:tensorflowlite_c.dll -c opt --compiler=clang-cl
         shell: cmd
 
       # Step 11: Zip
