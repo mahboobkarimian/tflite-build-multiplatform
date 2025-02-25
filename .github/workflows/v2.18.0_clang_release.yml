@@ -1,0 +1,132 @@
+name: Build TensorFlowLite on Windows with Clang
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g., v_latest)'
+        required: true
+        default: 'v_latest_release'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      # Checkout the TensorFlow repository
+      - name: Checkout TensorFlow
+        uses: actions/checkout@v4
+        id: checkout_tensorflow
+        with:
+          repository: tensorflow/tensorflow
+          ref: v2.18.0
+    
+      - name: Get the checked-out tag
+        id: get_tag
+        run: |
+          # Capture the tag from the checked-out ref
+          TAG=$(git describe --tags --exact-match 2>/dev/null || echo "unknown")
+          echo "TAG=$TAG" >> $GITHUB_ENV
+
+      # Verify Chocolatey is available
+      - name: Verify Chocolatey Installation
+        run: choco --version
+        shell: cmd
+
+      # Install Clang using Chocolatey
+      #- name: Install Clang
+      #  run: choco install llvm --version=17.0.6 -y
+      #  shell: cmd
+
+      # Set up MSYS2 (optional, for additional tools like patch)
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: git patch unzip mingw-w64-x86_64-gcc
+
+      # Set up Python 3.9
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      # Set up Bazelisk
+      - name: Set up Bazelisk
+        uses: bazelbuild/setup-bazelisk@v2
+
+      # Install Python dependencies
+      - name: Install Python Dependencies
+        run: pip install -U six numpy wheel packaging
+
+      # Set environment variables for Python and Clang
+      - name: Set Environment Variables
+        shell: pwsh
+        run: |
+          $pythonExe = (Get-Command python).Source
+          $sitePackages = python -c "import site; print(site.getsitepackages()[0])"
+          echo "PYTHON_BIN_PATH=$pythonExe" >> $env:GITHUB_ENV
+          echo "PYTHON_LIB_PATH=$sitePackages" >> $env:GITHUB_ENV
+          # Add Clang to PATH
+          echo "PATH=C:\Program Files\LLVM\bin;$env:PATH" >> $env:GITHUB_ENV
+          # Add MSYS2 to PATH (if needed)
+          echo "PATH=C:\msys64\mingw64\bin;$env:PATH" >> $env:GITHUB_ENV
+
+      - name: Configure TensorFlow
+        shell: pwsh
+        env:
+          TF_NEED_CLANG: 1  # Force TensorFlow to use Clang
+        run: |
+          # Generate an array of empty strings (simulating Enter presses)
+          $promptCount = 10  # Adjust this number based on expected prompts
+          $answers = @("") * $promptCount
+      
+          # Join with newlines and pipe to configure.py
+          $answers -join "`n" | python configure.py
+
+
+      # Step 9: Build TensorFlow lite C++
+      - name: Build TensorFlow
+        run: bazel build //tensorflow/lite:tensorflowlite.dll -c opt --compiler=clang-cl
+        shell: cmd
+        
+      # Step 10: Build TensorFlow C
+      - name: Build TensorFlow
+        run: bazel build //tensorflow/lite/c:tensorflowlite_c.dll -c opt --compiler=clang-cl
+        shell: cmd
+
+      # Step 11: Zip
+      - name: Zip and Upload Artifact
+        run: Compress-Archive -Path bazel-bin\* -DestinationPath tflite_dll_c_cpp.zip
+
+      # Step 12: Upload
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tflite_dll_c_cpp.zip
+          path: tflite_dll_c_cpp.zip
+
+      # Step 12: Create Release and Upload Asset
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass it via env
+        with:
+          tag_name: ${{ github.event.inputs.tag_name }}
+          release_name: "Release ${{ env.TAG }}"
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass it via env
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./tflite_dll_c_cpp.zip
+          asset_name: tflite_dll_c_cpp.zip
+          asset_content_type: application/zip
