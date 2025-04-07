@@ -28,22 +28,20 @@ jobs:
 
       - name: Configure TensorFlow
         run: |
-          export TF_CONFIGURE_IOS=1
           export TF_NEED_ROCM=0
           export TF_NEED_CUDA=0
           python configure.py
 
       - name: Build TensorFlow Lite C
-        run: bazel build --config=ios_fat -c opt --cxxopt=--std=c++17 //tensorflow/lite/ios:TensorFlowLiteC_framework
+        run: bazel build -c opt  //tensorflow/lite:libtensorflowlite.dylib
 
       - name: Zip and Upload Artifact
         run: |
           mkdir -p output
-          cp bazel-bin/tensorflow/lite/ios/TensorFlowLite*.zip output/
-          zip -r output/TensorFlowLite_ios.zip bazel-bin
+          zip -r output/TensorFlowLite_macos.zip bazel-bin
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TensorFlowLiteC_framework.zip
+          name: TensorFlowLite_macos.zip
           path: output/*.zip
