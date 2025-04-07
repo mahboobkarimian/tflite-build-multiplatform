@@ -21,6 +21,8 @@ jobs:
       DIST_DIR: ${{ github.workspace }}/dist
       ANDROID_SDK_ROOT: /usr/local/android/android-sdk-linux
       ANDROID_NDK_HOME: /usr/local/android/android-ndk-r25b
+      ANDROID_NDK_ROOT: /usr/local/android/android-ndk-r25b
+      ANDROID_HOME: /usr/local/android/android-sdk-linux
       ANDROID_NDK_API_LEVEL: 21
       ANDROID_BUILD_TOOLS_VERSION: 30.0.3
       ANDROID_SDK_API_LEVEL: 30
