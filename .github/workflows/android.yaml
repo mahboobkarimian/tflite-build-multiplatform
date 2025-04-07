@@ -50,6 +50,12 @@ jobs:
         build --action_env ANDROID_SDK_HOME="${ANDROID_HOME}"
         EOF
 
+        # Create tensorflow configure script responses
+        echo -e "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" > ci_configure_responses.txt
+        
+        # Run configure script with prepared responses
+        cat ci_configure_responses.txt | ./configure
+
     - name: Build TensorFlow Lite for Android
       run: |
         ARCHS=("android_arm64" "android_arm" "android_x86_64" "android_x86")
