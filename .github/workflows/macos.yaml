@@ -1,4 +1,4 @@
-name: Build TensorFlow Lite for iOS
+name: Build TensorFlow Lite for MACOS
 
 on:
   workflow_dispatch:
