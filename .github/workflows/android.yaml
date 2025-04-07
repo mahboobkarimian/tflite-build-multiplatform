@@ -1,0 +1,97 @@
+name: Build TensorFlow Lite for Android
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      TF_REPO: https://github.com/tensorflow/tensorflow.git
+      TF_TAG: v2.18.0
+      TF_DIR: ${{ github.workspace }}/tensorflow
+      DIST_DIR: ${{ github.workspace }}/dist
+
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git curl zip unzip openjdk-11-jdk python3 python3-pip
+        sudo apt-get install -y build-essential pkg-config zip zlib1g-dev
+        sudo apt-get install -y android-sdk adb
+        sudo pip3 install --upgrade pip
+        sudo pip3 install numpy
+
+    - name: Install Bazelisk (Bazel version manager)
+      run: |
+        curl -Lo bazelisk https://github.com/bazelbuild/bazelisk/releases/download/v1.19.0/bazelisk-linux-amd64
+        chmod +x bazelisk
+        sudo mv bazelisk /usr/local/bin/bazel
+
+    - name: Clone TensorFlow and checkout tag
+      run: |
+        git clone --depth 1 --branch $TF_TAG $TF_REPO $TF_DIR
+
+    - name: Download TFLite dependencies
+      run: |
+        cd $TF_DIR
+        ./tensorflow/lite/tools/make/download_dependencies.sh
+
+    - name: Build TensorFlow Lite for Android
+      run: |
+        ARCHS=("android_arm64" "android_arm" "android_x86_64" "android_x86")
+        ABIS=("arm64-v8a" "armeabi-v7a" "x86_64" "x86")
+        mkdir -p $DIST_DIR/libs
+
+        cd $TF_DIR
+        for i in "${!ARCHS[@]}"; do
+          ARCH="${ARCHS[$i]}"
+          ABI="${ABIS[$i]}"
+          echo "Building for $ARCH --> $ABI"
+
+          bazel build //tensorflow/lite:libtensorflowlite.so --config="$ARCH" --cxxopt='--std=c++11' -c opt
+          bazel build //tensorflow/lite/c:libtensorflowlite_c.so --config="$ARCH" -c opt
+          bazel build //tensorflow/lite/delegates/gpu:libtensorflowlite_gpu_delegate.so -c opt --config="$ARCH" --copt -Os --copt -DTFLITE_GPU_BINARY_RELEASE --copt -s --strip always
+
+          mkdir -p "$DIST_DIR/libs/android/$ABI"
+          cp bazel-bin/tensorflow/lite/libtensorflowlite.so "$DIST_DIR/libs/android/$ABI/"
+          cp bazel-bin/tensorflow/lite/c/libtensorflowlite_c.so "$DIST_DIR/libs/android/$ABI/"
+          cp bazel-bin/tensorflow/lite/delegates/gpu/libtensorflowlite_gpu_delegate.so "$DIST_DIR/libs/android/$ABI/"
+        done
+
+    - name: Collect Headers
+      run: |
+        echo "Collecting headers..."
+        cd "$TF_DIR/tensorflow"
+        rm -f headers.tar
+        find ./lite -name "*.h" | tar -cf headers.tar -T -
+
+        if [ ! -f headers.tar ]; then
+          echo "headers.tar not created"
+          exit 1
+        fi
+
+        mv headers.tar "$DIST_DIR"
+        cd "$DIST_DIR"
+        mkdir -p include/tensorflow
+        tar xvf headers.tar -C include/tensorflow
+        rm headers.tar
+
+        echo "Copy flatbuffers headers..."
+        mkdir -p include/flatbuffers
+        cp $TF_DIR/bazel-tensorflow/external/flatbuffers/include/flatbuffers/* include/flatbuffers/
+
+    - name: Upload artifacts (libs + headers)
+      uses: actions/upload-artifact@v4
+      with:
+        name: tflite-android-build
+        path: ${{ env.DIST_DIR }}
+        retention-days: 90
