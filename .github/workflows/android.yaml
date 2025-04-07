@@ -52,7 +52,9 @@ jobs:
         sudo mv cmdline-tools/* ${ANDROID_SDK_ROOT}/cmdline-tools/latest/
         
         # Accept licenses and install required SDK components
-        yes | sudo ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-${ANDROID_SDK_API_LEVEL}" "build-tools;${ANDROID_BUILD_TOOLS_VERSION}"
+        # Accept licenses and install required SDK components
+        echo "y" | sudo ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses
+        sudo ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-${ANDROID_SDK_API_LEVEL}" "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" --verbose
         
         # Install NDK
         sudo ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "ndk;25.2.9519653"
