@@ -1,0 +1,50 @@
+name: Build TensorFlow Lite for iOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout TensorFlow
+        uses: actions/checkout@v4
+        with:
+          repository: tensorflow/tensorflow
+          ref: v2.18.0
+
+      - name: Set up Xcode
+        run: sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+
+      - name: Install Bazel
+        run: |
+          brew install bazelbuild/tap/bazel
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install Python Dependencies
+        run: pip install -U six numpy wheel packaging
+
+      - name: Configure TensorFlow
+        run: |
+          export TF_CONFIGURE_IOS=1
+          export TF_NEED_ROCM=0
+          export TF_NEED_ROCM=0
+          python configure.py
+
+      - name: Build TensorFlow Lite
+        run: bazel build --config=ios_fat -c opt --cxxopt=--std=c++17 //tensorflow/lite/ios:TensorFlowLiteC_framework
+
+      - name: Zip and Upload Artifact
+        run: |
+          mkdir -p output
+          cp bazel-bin/tensorflow/lite/ios/TensorFlowLiteC_framework.zip output/
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TensorFlowLiteC_framework.zip
+          path: output/TensorFlowLiteC_framework.zip
