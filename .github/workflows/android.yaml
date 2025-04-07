@@ -39,11 +39,6 @@ jobs:
       run: |
         git clone --depth 1 --branch $TF_TAG $TF_REPO $TF_DIR
 
-    - name: Download TFLite dependencies
-      run: |
-        cd $TF_DIR
-        ./tensorflow/lite/tools/make/download_dependencies.sh
-
     - name: Build TensorFlow Lite for Android
       run: |
         ARCHS=("android_arm64" "android_arm" "android_x86_64" "android_x86")
