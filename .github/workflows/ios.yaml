@@ -18,10 +18,6 @@ jobs:
       - name: Set up Xcode
         run: sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
 
-      - name: Install Bazel
-        run: |
-          brew install bazelbuild/tap/bazel
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
