@@ -30,10 +30,6 @@ jobs:
               cd $TF_DIR
               git checkout v2.18.0  # Use specific version - adjust as needed
             fi
-            
-            # Do not use Clang
-            export TF_NEED_CLANG=0
-            export ANDROID_API_LEVEL=26
 
             # Create tensorflow configure script responses
             echo -e "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" > ci_configure_responses.txt
