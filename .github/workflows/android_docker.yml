@@ -44,6 +44,15 @@ jobs:
             ARCHS=("android_arm64" "android_arm")
             ABIS=("arm64-v8a" "armeabi-v7a")
             
+            # append actions to .tf_configure.bazelrc
+            echo "build --action_env ANDROID_NDK_HOME=/android/ndk" >> $TF_DIR/.tf_configure.bazelrc
+            echo "build --action_env ANDROID_NDK_VERSION=25" >> $TF_DIR/.tf_configure.bazelrc
+            echo "build --action_env ANDROID_NDK_API_LEVEL=21" >> $TF_DIR/.tf_configure.bazelrc
+            echo "build --action_env ANDROID_BUILD_TOOLS_VERSION=31.0.0" >> $TF_DIR/.tf_configure.bazelrc
+            echo "build --action_env ANDROID_SDK_API_LEVEL=26" >> $TF_DIR/.tf_configure.bazelrc
+            echo "build --action_env ANDROID_SDK_HOME=/android/sdk" >> $TF_DIR/.tf_configure.bazelrc
+
+
             cd $TF_DIR
             for i in "${!ARCHS[@]}"; do
               ARCH="${ARCHS[$i]}"
