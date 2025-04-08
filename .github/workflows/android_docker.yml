@@ -1,0 +1,72 @@
+name: Build TensorFlow Lite for Android in Docker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build TensorFlow Lite for Android
+        run: |
+          # Build the Docker image
+          docker build -t tflite-android-builder -f docker-build-android.Dockerfile .
+          
+          # Create a container from the image and run the build script
+          docker run --name tflite-builder tflite-android-builder bash -c '
+            # Set environment variables
+            export TF_DIR=/tensorflow
+            export DIST_DIR=/output
+            
+            # Clone TensorFlow repository if not already present
+            if [ ! -d "$TF_DIR" ]; then
+              git clone https://github.com/tensorflow/tensorflow.git $TF_DIR
+              cd $TF_DIR
+              git checkout v2.18.0  # Use specific version - adjust as needed
+            fi
+            
+            # Prepare output directory
+            mkdir -p $DIST_DIR/libs
+            
+            # Build TensorFlow Lite for different architectures
+            ARCHS=("android_arm64" "android_arm" "android_x86_64" "android_x86")
+            ABIS=("arm64-v8a" "armeabi-v7a" "x86_64" "x86")
+            
+            cd $TF_DIR
+            for i in "${!ARCHS[@]}"; do
+              ARCH="${ARCHS[$i]}"
+              ABI="${ABIS[$i]}"
+              echo "Building for $ARCH --> $ABI"
+            
+              bazel build //tensorflow/lite:libtensorflowlite.so --config="$ARCH" --cxxopt="--std=c++11" -c opt
+              bazel build //tensorflow/lite/c:libtensorflowlite_c.so --config="$ARCH" -c opt
+              bazel build //tensorflow/lite/delegates/gpu:libtensorflowlite_gpu_delegate.so -c opt --config="$ARCH" --copt -Os --copt -DTFLITE_GPU_BINARY_RELEASE --copt -s --strip always
+            
+              mkdir -p "$DIST_DIR/libs/android/$ABI"
+              cp bazel-bin/tensorflow/lite/libtensorflowlite.so "$DIST_DIR/libs/android/$ABI/"
+              cp bazel-bin/tensorflow/lite/c/libtensorflowlite_c.so "$DIST_DIR/libs/android/$ABI/"
+              cp bazel-bin/tensorflow/lite/delegates/gpu/libtensorflowlite_gpu_delegate.so "$DIST_DIR/libs/android/$ABI/"
+            done
+          '
+          
+          # Create output directory
+          mkdir -p tflite-android-libs
+          
+          # Copy the built libraries from the Docker container
+          docker cp tflite-builder:/output/libs/android tflite-android-libs/
+          
+          # Clean up
+          docker rm tflite-builder
+
+      - name: Upload TensorFlow Lite libraries
+        uses: actions/upload-artifact@v4
+        with:
+          name: tflite-android-libraries
+          path: tflite-android-libs
+          retention-days: 90
