@@ -31,12 +31,21 @@ jobs:
               git checkout v2.18.0  # Use specific version - adjust as needed
             fi
             
+            # Do not use Clang
+            export TF_NEED_CLANG=0
+
+            # Create tensorflow configure script responses
+            echo -e "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" > ci_configure_responses.txt
+            
+            # Run configure script with prepared responses
+            cat ci_configure_responses.txt | ./configure
+
             # Prepare output directory
             mkdir -p $DIST_DIR/libs
             
             # Build TensorFlow Lite for different architectures
-            ARCHS=("android_arm64" "android_arm" "android_x86_64" "android_x86")
-            ABIS=("arm64-v8a" "armeabi-v7a" "x86_64" "x86")
+            ARCHS=("android_arm64" "android_arm")
+            ABIS=("arm64-v8a" "armeabi-v7a")
             
             cd $TF_DIR
             for i in "${!ARCHS[@]}"; do
@@ -44,9 +53,9 @@ jobs:
               ABI="${ABIS[$i]}"
               echo "Building for $ARCH --> $ABI"
             
-              bazel build //tensorflow/lite:libtensorflowlite.so --config="$ARCH" --cxxopt="--std=c++11" -c opt
-              bazel build //tensorflow/lite/c:libtensorflowlite_c.so --config="$ARCH" -c opt
-              bazel build //tensorflow/lite/delegates/gpu:libtensorflowlite_gpu_delegate.so -c opt --config="$ARCH" --copt -Os --copt -DTFLITE_GPU_BINARY_RELEASE --copt -s --strip always
+              bazel build //tensorflow/lite:libtensorflowlite.so --config="$ARCH" --cxxopt="--std=c++17" -c opt
+              bazel build //tensorflow/lite/c:libtensorflowlite_c.so --config="$ARCH" --cxxopt="--std=c++17" -c opt
+              bazel build //tensorflow/lite/delegates/gpu:libtensorflowlite_gpu_delegate.so -c opt --config="$ARCH" --cxxopt="--std=c++17" --copt -Os --copt -DTFLITE_GPU_BINARY_RELEASE --copt -s --strip always
             
               mkdir -p "$DIST_DIR/libs/android/$ABI"
               cp bazel-bin/tensorflow/lite/libtensorflowlite.so "$DIST_DIR/libs/android/$ABI/"
